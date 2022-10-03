@@ -36,12 +36,10 @@ namespace Always_On_Server
 
         //debug tools
         private bool debug;
-        private bool shippingMenuActive;
-
-        private readonly Dictionary<string, int> PreviousFriendships = new Dictionary<string, int>();  //stores friendship values
 
         public int connectionsCount = 1;
 
+        private bool sleepCommandUsed;
         private bool eventCommandUsed;
 
         private bool eggHuntAvailable; //is egg festival ready start timer for triggering eggHunt Event
@@ -67,6 +65,7 @@ namespace Always_On_Server
 
         private bool winterFeastAvailable;
         private int winterFeastCountDown;
+
         //variables for current time and date
         int currentTime = Game1.timeOfDay;
         SDate currentDate = SDate.Now();
@@ -84,26 +83,8 @@ namespace Always_On_Server
 
 
 
-
-
-        //variables for timeout reset code
-
-        private int timeOutTicksForReset;
-        private int festivalTicksForReset;
-        private int shippingMenuTimeoutTicks;
-
-
-        SDate currentDateForReset = SDate.Now();
-        SDate danceOfJelliesForReset = new SDate(28, "summer");
-        SDate spiritsEveForReset = new SDate(27, "fall");
-        //////////////////////////
-
-
-
-
         public override void Entry(IModHelper helper)
         {
-
             this.Config = this.Helper.ReadConfig<ModConfig>();
 
             helper.ConsoleCommands.Add("server", "Toggles headless 'auto mode' on/off", this.ToggleAutoMode);
@@ -116,20 +97,14 @@ namespace Always_On_Server
             helper.Events.GameLoop.UpdateTicked += this.OnUpdateTicked; //handles various events that should occur as soon as they are available
             helper.Events.Input.ButtonPressed += this.OnButtonPressed;
             helper.Events.Display.Rendered += this.OnRendered;
-            helper.Events.Specialized.UnvalidatedUpdateTicked += OnUnvalidatedUpdateTick; //used bc only thing that gets throug save window
         }
-
-
-
-
-
 
         /// <summary>Raised after the player loads a save slot and the world is initialised.</summary>
         /// <param name="sender">The event sender.</param>
         /// <param name="e">The event data.</param>
         private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
         {
-            // turns on server after the game loads
+            // turns on server by auto load mod
             if (Game1.IsServer)
             {
                 //store levels, set in game levels to max
@@ -146,11 +121,11 @@ namespace Always_On_Server
                 Game1.player.FishingLevel = 10;
                 Game1.player.CombatLevel = 10;
                 ////////////////////////////////////////
+                Game1.player.difficultyModifier = this.Config.profitmargin * .01f;
                 IsAutomating = true;
                 Game1.chatBox.addInfoMessage("The host is in automatic mode!");
                 this.Monitor.Log("Auto Mode On!", LogLevel.Info);
             }
-
         }
 
         //debug for running with no one online
@@ -205,7 +180,6 @@ namespace Always_On_Server
             }
         }
 
-
         // toggles auto mode on/off with console command "server"
         private void ToggleAutoMode(string command, string[] args)
         {
@@ -216,7 +190,6 @@ namespace Always_On_Server
                     Helper.ReadConfig<ModConfig>();
                     IsAutomating = true;
 
-
                     this.Monitor.Log("Auto mode on!", LogLevel.Info);
                     Game1.chatBox.addInfoMessage("The host is in automatic mode!");
 
@@ -224,7 +197,6 @@ namespace Always_On_Server
                     Game1.addHUDMessage(new HUDMessage("Auto Mode On!", ""));
 
                     Game1.options.pauseWhenOutOfFocus = false;
-
 
                     // store levels, set in game levels to max
                     var data = this.Helper.Data.ReadJsonFile<ModData>($"data/{Constants.SaveFolderName}.json") ?? new ModData();
@@ -434,24 +406,6 @@ namespace Always_On_Server
                 }
             }
 
-            // disable friendship decay
-            if (IsAutomating)
-            {
-                if (this.PreviousFriendships.Any())
-                {
-                    foreach (string key in Game1.player.friendshipData.Keys)
-                    {
-                        Friendship friendship = Game1.player.friendshipData[key];
-                        if (this.PreviousFriendships.TryGetValue(key, out int oldPoints) && oldPoints > friendship.Points)
-                            friendship.Points = oldPoints;
-                    }
-                }
-
-                this.PreviousFriendships.Clear();
-                foreach (var pair in Game1.player.friendshipData.FieldDict)
-                    this.PreviousFriendships[pair.Key] = pair.Value.Value.Points;
-            }
-
             // automate events
             if (this.IsAutomating)
             {
@@ -480,12 +434,6 @@ namespace Always_On_Server
                         if (Game1.activeClickableMenu != null)
                         {
                             //this.Helper.Reflection.GetMethod(Game1.activeClickableMenu, "receiveLeftClick").Invoke(10, 10, true);
-                        }
-                        //festival timeout
-                        festivalTicksForReset += 1;
-                        if (festivalTicksForReset >= this.Config.eggFestivalTimeOut + 180)
-                        {
-                            Game1.options.setServerMode("offline");
                         }
                         ///////////////////////////////////////////////
                     }
@@ -517,13 +465,6 @@ namespace Always_On_Server
                         if (Game1.activeClickableMenu != null)
                         {
                             // this.Helper.Reflection.GetMethod(Game1.activeClickableMenu, "receiveLeftClick").Invoke(10, 10, true);
-                        }
-
-                        //festival timeout
-                        festivalTicksForReset += 1;
-                        if (festivalTicksForReset >= this.Config.flowerDanceTimeOut + 90)
-                        {
-                            Game1.options.setServerMode("offline");
                         }
                         ///////////////////////////////////////////////
                     }
@@ -563,12 +504,6 @@ namespace Always_On_Server
                         {
                             //this.Helper.Reflection.GetMethod(Game1.activeClickableMenu, "receiveLeftClick").Invoke(10, 10, true);
                         }
-                        //festival timeout
-                        festivalTicksForReset += 1;
-                        if (festivalTicksForReset >= this.Config.luauTimeOut + 80)
-                        {
-                            Game1.options.setServerMode("offline");
-                        }
                         ///////////////////////////////////////////////
                     }
                 }
@@ -600,12 +535,6 @@ namespace Always_On_Server
                         {
                             // this.Helper.Reflection.GetMethod(Game1.activeClickableMenu, "receiveLeftClick").Invoke(10, 10, true);
                         }
-                        //festival timeout
-                        festivalTicksForReset += 1;
-                        if (festivalTicksForReset >= this.Config.danceOfJelliesTimeOut + 180)
-                        {
-                            Game1.options.setServerMode("offline");
-                        }
                         ///////////////////////////////////////////////
                     }
                 }
@@ -620,17 +549,6 @@ namespace Always_On_Server
                     }
 
                     grangeDisplayCountDown += 1;
-                    festivalTicksForReset += 1;
-                    //festival timeout code
-                    if (festivalTicksForReset == this.Config.fairTimeOut - 120)
-                    {
-                        this.SendChatMessage("2 minutes to the exit or");
-                        this.SendChatMessage("everyone will be kicked.");
-                    }
-                    if (festivalTicksForReset >= this.Config.fairTimeOut)
-                    {
-                        Game1.options.setServerMode("offline");
-                    }
                     ///////////////////////////////////////////////
                     float chatGrange = this.Config.grangeDisplayCountDownConfig / 60f;
                     if (grangeDisplayCountDown == 1)
@@ -650,17 +568,6 @@ namespace Always_On_Server
                 if (goldenPumpkinAvailable && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
                 {
                     goldenPumpkinCountDown += 1;
-                    festivalTicksForReset += 1;
-                    //festival timeout code
-                    if (festivalTicksForReset == this.Config.spiritsEveTimeOut - 120)
-                    {
-                        this.SendChatMessage("2 minutes to the exit or");
-                        this.SendChatMessage("everyone will be kicked.");
-                    }
-                    if (festivalTicksForReset >= this.Config.spiritsEveTimeOut)
-                    {
-                        Game1.options.setServerMode("offline");
-                    }
                     ///////////////////////////////////////////////
                     if (goldenPumpkinCountDown == 10)
                         this.LeaveFestival();
@@ -692,12 +599,6 @@ namespace Always_On_Server
                         {
                             //this.Helper.Reflection.GetMethod(Game1.activeClickableMenu, "receiveLeftClick").Invoke(10, 10, true);
                         }
-                        //festival timeout
-                        festivalTicksForReset += 1;
-                        if (festivalTicksForReset >= this.Config.festivalOfIceTimeOut + 180)
-                        {
-                            Game1.options.setServerMode("offline");
-                        }
                         ///////////////////////////////////////////////
                     }
                 }
@@ -706,17 +607,6 @@ namespace Always_On_Server
                 if (winterFeastAvailable && Game1.CurrentEvent != null && Game1.CurrentEvent.isFestival)
                 {
                     winterFeastCountDown += 1;
-                    festivalTicksForReset += 1;
-                    //festival timeout code
-                    if (festivalTicksForReset == this.Config.winterStarTimeOut - 120)
-                    {
-                        this.SendChatMessage("2 minutes to the exit or");
-                        this.SendChatMessage("everyone will be kicked.");
-                    }
-                    if (festivalTicksForReset >= this.Config.winterStarTimeOut)
-                    {
-                        Game1.options.setServerMode("offline");
-                    }
                     ///////////////////////////////////////////////
                     if (winterFeastCountDown == 10)
                         this.LeaveFestival();
@@ -724,14 +614,14 @@ namespace Always_On_Server
             }
 
             // Skip level up menu
-            if (IsAutomating && Game1.activeClickableMenu is LevelUpMenu)
+            if (IsAutomating && Game1.activeClickableMenu is LevelUpMenu menu)
             {
                 // Taken from LevelUpMenu.cs:504
                 this.Monitor.Log("Skipping level up menu");
-                ((LevelUpMenu)Game1.activeClickableMenu).isActive = false;
-                ((LevelUpMenu)Game1.activeClickableMenu).informationUp = false;
-                ((LevelUpMenu)Game1.activeClickableMenu).isProfessionChooser = false;
-                ((LevelUpMenu)Game1.activeClickableMenu).RemoveLevelFromLevelList();
+                menu.isActive = false;
+                menu.informationUp = false;
+                menu.isProfessionChooser = false;
+                menu.RemoveLevelFromLevelList();
             }
         }
 
@@ -760,7 +650,6 @@ namespace Always_On_Server
                 gameTicks = 0;
             }
 
-
             //handles client commands for sleep, go to festival, start festival event.
             if (Context.IsWorldReady && IsAutomating)
             {
@@ -775,16 +664,9 @@ namespace Always_On_Server
                     {
                         if (lastFragment == "!sleep")
                         {
-                            if (currentTime >= this.Config.timeOfDayToSleep)
-                            {
-                                GoToBed();
-                                this.SendChatMessage("Trying to go to bed.");
-                            }
-                            else
-                            {
-                                this.SendChatMessage("It's too early.");
-                                this.SendChatMessage($"Try after {this.Config.timeOfDayToSleep}.");
-                            }
+                            sleepCommandUsed = true;
+                            GoToBed();
+                            this.SendChatMessage("Trying to go to bed now.");
                         }
                         if (lastFragment == "!festival")
                         {
@@ -1114,7 +996,7 @@ namespace Always_On_Server
                         FeastOfWinterStar();
                     }
 
-                    else if (currentTime >= this.Config.timeOfDayToSleep && numPlayers >= 1)  //turn back to 1 after testing!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    else if ((sleepCommandUsed || currentTime >= this.Config.timeOfDayToSleep) && numPlayers >= 1)  //turn back to 1 after testing!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     {
                         GoToBed();
                     }
@@ -1263,9 +1145,7 @@ namespace Always_On_Server
             {
 
                 eggHuntAvailable = false;
-                Game1.options.setServerMode("online");
                 eggHuntCountDown = 0;
-                festivalTicksForReset = 0;
                 GoToBed();
             }
         }
@@ -1290,9 +1170,7 @@ namespace Always_On_Server
             {
 
                 flowerDanceAvailable = false;
-                Game1.options.setServerMode("online");
                 flowerDanceCountDown = 0;
-                festivalTicksForReset = 0;
                 GoToBed();
             }
         }
@@ -1318,9 +1196,7 @@ namespace Always_On_Server
             {
 
                 luauSoupAvailable = false;
-                Game1.options.setServerMode("online");
                 luauSoupCountDown = 0;
-                festivalTicksForReset = 0;
                 GoToBed();
             }
         }
@@ -1348,9 +1224,7 @@ namespace Always_On_Server
             {
 
                 jellyDanceAvailable = false;
-                Game1.options.setServerMode("online");
                 jellyDanceCountDown = 0;
-                festivalTicksForReset = 0;
                 GoToBed();
             }
         }
@@ -1378,10 +1252,7 @@ namespace Always_On_Server
 
                 Game1.displayHUD = true;
                 grangeDisplayAvailable = false;
-                Game1.options.setServerMode("online");
                 grangeDisplayCountDown = 0;
-                festivalTicksForReset = 0;
-
                 GoToBed();
             }
         }
@@ -1411,9 +1282,7 @@ namespace Always_On_Server
 
                 Game1.displayHUD = true;
                 goldenPumpkinAvailable = false;
-                Game1.options.setServerMode("online");
                 goldenPumpkinCountDown = 0;
-                festivalTicksForReset = 0;
                 GoToBed();
             }
         }
@@ -1439,9 +1308,7 @@ namespace Always_On_Server
             {
 
                 iceFishingAvailable = false;
-                Game1.options.setServerMode("online");
                 iceFishingCountDown = 0;
-                festivalTicksForReset = 0;
                 GoToBed();
             }
         }
@@ -1467,9 +1334,7 @@ namespace Always_On_Server
             {
 
                 winterFeastAvailable = false;
-                Game1.options.setServerMode("online");
                 winterFeastCountDown = 0;
-                festivalTicksForReset = 0;
                 GoToBed();
             }
         }
@@ -1512,62 +1377,10 @@ namespace Always_On_Server
             // shipping menu "OK" click through code
             if (IsAutomating)
             {
+                sleepCommandUsed = false;
                 this.Monitor.Log("This is the Shipping Menu");
-                shippingMenuActive = true;
                 if (Game1.activeClickableMenu is ShippingMenu)
                     this.Helper.Reflection.GetMethod(Game1.activeClickableMenu, "okClicked").Invoke();
-            }
-        }
-
-        /// <summary>Raised after the game state is updated (≈60 times per second), regardless of normal SMAPI validation. This event is not thread-safe and may be invoked while game logic is running asynchronously. Changes to game state in this method may crash the game or corrupt an in-progress save. Do not use this event unless you're fully aware of the context in which your code will be run. Mods using this event will trigger a stability warning in the SMAPI console.</summary>
-        /// <param name="sender">The event sender.</param>
-        /// <param name="e">The event data.</param>
-        private void OnUnvalidatedUpdateTick(object sender, UnvalidatedUpdateTickedEventArgs e)
-        {
-            //resets server connection after certain amount of time end of day
-            if (Game1.timeOfDay >= this.Config.timeOfDayToSleep || Game1.timeOfDay == 600 && currentDateForReset != danceOfJelliesForReset && currentDateForReset != spiritsEveForReset && this.Config.endofdayTimeOut != 0)
-            {
-                timeOutTicksForReset += 1;
-                var countdowntoreset = (2600 - this.Config.timeOfDayToSleep) * .01 * 6 * 7 * 60;
-                if (timeOutTicksForReset >= (countdowntoreset + (this.Config.endofdayTimeOut * 60)))
-                {
-                    Game1.options.setServerMode("offline");
-                }
-            }
-            if (currentDateForReset == danceOfJelliesForReset || currentDateForReset == spiritsEveForReset && this.Config.endofdayTimeOut != 0)
-            {
-                if (Game1.timeOfDay >= 2400 || Game1.timeOfDay == 600)
-                {
-                    timeOutTicksForReset += 1;
-                    if (timeOutTicksForReset >= (5040 + (this.Config.endofdayTimeOut * 60)))
-                    {
-                        Game1.options.setServerMode("offline");
-                    }
-                }
-            }
-
-            if (shippingMenuActive && this.Config.endofdayTimeOut != 0)
-            {
-                shippingMenuTimeoutTicks += 1;
-                if (shippingMenuTimeoutTicks >= this.Config.endofdayTimeOut * 60)
-                {
-                    Game1.options.setServerMode("offline");
-                }
-            }
-
-            if (Game1.timeOfDay == 610)
-            {
-                shippingMenuActive = false;
-                Game1.player.difficultyModifier = this.Config.profitmargin * .01f;
-
-                Game1.options.setServerMode("online");
-                timeOutTicksForReset = 0;
-                shippingMenuTimeoutTicks = 0;
-            }
-
-            if (Game1.timeOfDay == 2600)
-            {
-                Game1.paused = false;
             }
         }
 
