@@ -167,7 +167,7 @@ namespace DedicatedServer.Utils
             {
                 if (null != item1.Value.lightSource)
                 {
-                    location.removeLightSource(item1.Value.lightSource.identifier);
+                    location.removeLightSource(item1.Value.lightSource.Id);
                 }
 
                 if (item1.Value.GetType() == typeof(Chest))

@@ -1,5 +1,7 @@
 ﻿using DedicatedServer.Config;
+using Microsoft.Xna.Framework;
 using StardewModdingAPI;
+using StardewModdingAPI.Framework.ModLoading.Rewriters.StardewValley_1_6;
 using StardewValley;
 using StardewValley.Extensions;
 using StardewValley.Locations;
@@ -88,11 +90,11 @@ namespace DedicatedServer.Crops
              */
             string str = SaveGame.FilterFileName(Game1.GetSaveGameName());
             string filenameNoTmpString = str + "_" + Game1.uniqueIDForThisGame;
-            string save_directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "StardewValley", "Saves", filenameNoTmpString + Path.DirectorySeparatorChar);
-            if (Game1.savePathOverride != "")
-            {
-                save_directory = Game1.savePathOverride;
-            }
+            string save_directory = Path.Combine(Program.GetSavesFolder(), filenameNoTmpString + Path.DirectorySeparatorChar);
+            //if (Game1.savePathOverride != "")
+            //{
+            //    save_directory = Game1.savePathOverride;
+            //}
             string saveFile = Path.Combine(save_directory, "AdditionalCropData");
 
             // Deserialize crop data from temp save file
@@ -146,15 +148,15 @@ namespace DedicatedServer.Crops
             string str = SaveGame.FilterFileName(Game1.GetSaveGameName());
             string filenameNoTmpString = str + "_" + Game1.uniqueIDForThisGame;
             string filenameWithTmpString = str + "_" + Game1.uniqueIDForThisGame + tmpString;
-            string save_directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "StardewValley", "Saves", filenameNoTmpString + Path.DirectorySeparatorChar);
-            if (Game1.savePathOverride != "")
-            {
-                save_directory = Game1.savePathOverride;
-                if (Game1.savePathOverride != "")
-                {
-                    save_backups_and_metadata = false;
-                }
-            }
+            string save_directory = Path.Combine(Program.GetSavesFolder(), filenameNoTmpString + Path.DirectorySeparatorChar);
+            //if (Game1.savePathOverride != "")
+            //{
+            //    save_directory = Game1.savePathOverride;
+            //    if (Game1.savePathOverride != "")
+            //    {
+            //        save_backups_and_metadata = false;
+            //    }
+            //}
             SaveGame.ensureFolderStructureExists();
             string tmpSaveFile = Path.Combine(save_directory, "AdditionalCropData" + tmpString);
             string saveFile = Path.Combine(save_directory, "AdditionalCropData");
