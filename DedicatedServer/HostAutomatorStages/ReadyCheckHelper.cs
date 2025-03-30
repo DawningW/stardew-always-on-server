@@ -17,12 +17,15 @@ namespace DedicatedServer.HostAutomatorStages
         private IModHelper helper;
         private IMonitor monitor;
         private ModConfig config;
+        static private ReadyCheckHelper instance;
+        static public bool ShouldDoDayStartedActions { get; private set; }
 
         public ReadyCheckHelper(IModHelper helper, IMonitor monitor, ModConfig config)
         {
             this.helper = helper;
             this.monitor = monitor;
             this.config = config;
+            instance = this;
         }
 
         public void Enable()
@@ -37,6 +40,11 @@ namespace DedicatedServer.HostAutomatorStages
 
         public void OnDayStarted(object sender, StardewModdingAPI.Events.DayStartedEventArgs e)
         {
+            ShouldDoDayStartedActions = true;
+        }
+
+        public static void DoDayStartedActions()
+        {
             //Checking mailbox sometimes gives some gold, but it's compulsory to unlock some events
             for (int i = 0; i < 10; ++i) {
                 Game1.getFarm().mailbox();
@@ -48,10 +56,12 @@ namespace DedicatedServer.HostAutomatorStages
             }
 
 
-            if (config?.UpgradeHouseLevelBasedOnFarmhand ?? false)
+            if (instance.config?.UpgradeHouseLevelBasedOnFarmhand ?? false)
             {
                 HostHouseUpgrade.NeedsUpgrade();
             }
+
+            ShouldDoDayStartedActions = false;
         }
 
         /// <summary>

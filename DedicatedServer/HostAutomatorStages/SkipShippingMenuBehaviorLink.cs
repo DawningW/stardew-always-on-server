@@ -36,7 +36,7 @@ namespace DedicatedServer.HostAutomatorStages
             {
                 if (state.HasBetweenShippingMenusWaitTicks())
                 {
-                    state.DecrementBetweenShippingMenusWaitTicks();
+                    //state.DecrementBetweenShippingMenusWaitTicks(); // Just click one time
                 } else
                 {
                     SkipShippingMenu();

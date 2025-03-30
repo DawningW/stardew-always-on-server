@@ -1,7 +1,7 @@
 {
   "Name": "DedicatedServer",
   "Author": "ObjectManagerManager & Chris82111",
-  "Version": "1.1.4-unofficial.1-wc",
+  "Version": "1.1.4-unofficial.2-wc",
   "Description": "Description",
   "UniqueID": "objectmanagermanager.DedicatedServer",
   "EntryDll": "DedicatedServer.dll",

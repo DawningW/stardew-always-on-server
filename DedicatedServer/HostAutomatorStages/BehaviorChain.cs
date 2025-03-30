@@ -44,6 +44,7 @@ namespace DedicatedServer.HostAutomatorStages
                 new CheckForParsnipSeedsBehaviorLink(),
                 new ExitFarmHouseBehaviorLink(),
                 new InvisibleBehaviorLink(),
+                new ProcessMailboxBehaviorLink(),
                 new GetFishingRodBehaviorLink(),
                 new UnlockCommunityCenterBehaviorLink(),
                 new PurchaseJojaMembershipBehaviorLink(config),

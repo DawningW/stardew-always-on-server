@@ -81,7 +81,7 @@ namespace DedicatedServer.HostAutomatorStages
         }
         public void SkipShippingMenu()
         {
-            betweenShippingMenusWaitTicks = 60;
+            betweenShippingMenusWaitTicks = 1000;
         }
         public void ClearBetweenShippingMenusWaitTicks()
         {
@@ -257,7 +257,7 @@ namespace DedicatedServer.HostAutomatorStages
         {
             betweenEventsWaitTicks = 0;
             betweenDialoguesWaitTicks = 0;
-            betweenShippingMenusWaitTicks = 0;
+            //betweenShippingMenusWaitTicks = 0;
             checkedForParsnipSeeds = false;
             exitedFarmhouse = false;
             betweenTransitionSleepWaitTicks = 0;
